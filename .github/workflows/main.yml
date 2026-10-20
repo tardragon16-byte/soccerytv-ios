@@ -1,1 +1,38 @@
+name: Build iOS App
 
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build unsigned .app
+        run: |
+          xcodebuild -project SocceryTV.xcodeproj \
+            -target SocceryTV \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT=$(pwd)/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Package into .ipa
+        run: |
+          mkdir -p Payload
+          cp -r build/Release-iphoneos/SocceryTV.app Payload/
+          zip -r SocceryTV.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SocceryTV-iOS-IPA
+          path: SocceryTV.ipa
